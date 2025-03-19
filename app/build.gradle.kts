@@ -36,6 +36,14 @@ android {
     buildFeatures {
         viewBinding = true
     }
+    buildFeatures {
+        compose = true  // Enables Jetpack Compose
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion ="1.5.14"  // Use the latest version
+    }
+
 }
 
 dependencies {
@@ -50,5 +58,21 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
+    // Jetpack Compose BOM (Manages compatible versions)
+    implementation(platform("androidx.compose:compose-bom:2024.02.00"))
 
+    // Core Jetpack Compose UI
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.material:material") // ✅ Fixes MaterialTheme & Surface
+    implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("androidx.activity:activity-compose:1.8.2")
+
+    // ViewModel support for Jetpack Compose
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
+
+    // Navigation for Compose
+    implementation("androidx.navigation:navigation-compose:2.7.7")
+
+    // Debugging tools (Optional)
+    debugImplementation("androidx.compose.ui:ui-tooling")
 }
