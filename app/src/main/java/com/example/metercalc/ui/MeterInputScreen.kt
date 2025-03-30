@@ -20,10 +20,15 @@ import java.time.LocalDate
 import java.util.*
 
 @Composable
-fun MeterInputScreen(viewModel: MeterViewModel = viewModel()) {
+fun MeterInputScreen(
+    viewModel: MeterViewModel = viewModel(),
+    onNavigateToReadingsTable: () -> Unit,
+    onNavigateToTotalCosts: () -> Unit
+) {
     var selectedMeterType by remember { mutableStateOf(MeterType.ELECTRICITY) }
     var readingValue by remember { mutableStateOf("") }
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
     
     // Create TariffRates instance
     val tariffRates = remember { TariffRates() }
@@ -36,7 +41,24 @@ fun MeterInputScreen(viewModel: MeterViewModel = viewModel()) {
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Enter Meter Reading", style = MaterialTheme.typography.h5)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Enter Meter Reading", style = MaterialTheme.typography.h5)
+            Row {
+                Button(
+                    onClick = onNavigateToTotalCosts,
+                    modifier = Modifier.padding(end = 8.dp)
+                ) {
+                    Text("Total Costs")
+                }
+                Button(onClick = onNavigateToReadingsTable) {
+                    Text("All Readings")
+                }
+            }
+        }
 
         // Dropdown for Meter Type Selection
         var expanded by remember { mutableStateOf(false) }
@@ -49,6 +71,7 @@ fun MeterInputScreen(viewModel: MeterViewModel = viewModel()) {
                     DropdownMenuItem(onClick = {
                         selectedMeterType = meter
                         expanded = false
+                        errorMessage = null // Clear error when changing meter type
                     }) {
                         Text(meter.name.replace("_", " "))  // Show formatted name
                     }
@@ -58,13 +81,53 @@ fun MeterInputScreen(viewModel: MeterViewModel = viewModel()) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Previous Reading Card
+        val latestReadings = viewModel.getLatestReadings(selectedMeterType)
+        if (latestReadings != null) {
+            val (newest, _) = latestReadings
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                elevation = 2.dp
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    Text(
+                        "Previous Reading",
+                        style = MaterialTheme.typography.subtitle1
+                    )
+                    Text("Value: ${newest.reading}")
+                    Text("Date: ${newest.readingDate}")
+                }
+            }
+        }
+
         // Input Field for Meter Reading
         OutlinedTextField(
             value = readingValue,
-            onValueChange = { readingValue = it },
-            label = { Text("Meter Reading") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            onValueChange = { 
+                readingValue = it
+                errorMessage = null // Clear error when typing
+            },
+            label = { Text("New Meter Reading") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            isError = errorMessage != null,
+            modifier = Modifier.fillMaxWidth()
         )
+
+        if (errorMessage != null) {
+            Text(
+                text = errorMessage!!,
+                color = MaterialTheme.colors.error,
+                style = MaterialTheme.typography.caption,
+                modifier = Modifier.padding(start = 16.dp)
+            )
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -72,7 +135,13 @@ fun MeterInputScreen(viewModel: MeterViewModel = viewModel()) {
         val datePicker = DatePickerDialog(
             context,
             { _, year, month, dayOfMonth ->
-                selectedDate = LocalDate.of(year, month + 1, dayOfMonth)
+                val newDate = LocalDate.of(year, month + 1, dayOfMonth)
+                if (latestReadings != null && newDate.isBefore(latestReadings.first.readingDate)) {
+                    errorMessage = "Date must be later than the previous reading date"
+                } else {
+                    selectedDate = newDate
+                    errorMessage = null
+                }
             },
             selectedDate.year,
             selectedDate.monthValue - 1,
@@ -86,16 +155,33 @@ fun MeterInputScreen(viewModel: MeterViewModel = viewModel()) {
         Spacer(modifier = Modifier.height(16.dp))
 
         // Save Button
-        Button(onClick = {
-            val value = readingValue.toBigDecimalOrNull()
-            if (value != null) {
+        Button(
+            onClick = {
+                val value = readingValue.toBigDecimalOrNull()
+                if (value == null) {
+                    errorMessage = "Enter a valid number"
+                    return@Button
+                }
+
+                // Validate reading value
+                if (latestReadings != null && value <= latestReadings.first.reading) {
+                    errorMessage = "New reading must be greater than the previous reading"
+                    return@Button
+                }
+
+                // Validate date
+                if (latestReadings != null && selectedDate.isBefore(latestReadings.first.readingDate)) {
+                    errorMessage = "Date must be later than the previous reading date"
+                    return@Button
+                }
+
                 viewModel.addReading(selectedMeterType, value, selectedDate)
                 Toast.makeText(context, "Reading saved!", Toast.LENGTH_SHORT).show()
                 readingValue = "" // Reset input field
-            } else {
-                Toast.makeText(context, "Enter a valid number", Toast.LENGTH_SHORT).show()
-            }
-        }) {
+                errorMessage = null
+            },
+            enabled = errorMessage == null
+        ) {
             Text("Save Reading")
         }
 
@@ -121,7 +207,6 @@ fun MeterInputScreen(viewModel: MeterViewModel = viewModel()) {
                 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                val latestReadings = viewModel.getLatestReadings(selectedMeterType)
                 if (latestReadings != null) {
                     val (newest, previous) = latestReadings
                     Text("Newest Reading: ${newest.reading} (${newest.readingDate})")

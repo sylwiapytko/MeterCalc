@@ -17,6 +17,7 @@ class MeterViewModel : ViewModel() {
         readings.add(MeterReading(meterType, date, reading))
     }
 
+
     fun getAllReadings(): List<MeterReading> {
         return readings
     }
