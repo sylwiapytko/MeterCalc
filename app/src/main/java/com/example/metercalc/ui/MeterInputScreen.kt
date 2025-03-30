@@ -13,6 +13,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.metercalc.data.models.MeterType
+import com.example.metercalc.data.models.TariffRates
 import com.example.metercalc.viewmodel.MeterViewModel
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -23,6 +24,9 @@ fun MeterInputScreen(viewModel: MeterViewModel = viewModel()) {
     var selectedMeterType by remember { mutableStateOf(MeterType.ELECTRICITY) }
     var readingValue by remember { mutableStateOf("") }
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
+    
+    // Create TariffRates instance
+    val tariffRates = remember { TariffRates() }
 
     val context = LocalContext.current
 
@@ -93,6 +97,49 @@ fun MeterInputScreen(viewModel: MeterViewModel = viewModel()) {
             }
         }) {
             Text("Save Reading")
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // Display Reading Difference and Cost
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            elevation = 4.dp
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text(
+                    "Latest Readings for ${selectedMeterType.name.replace("_", " ")}",
+                    style = MaterialTheme.typography.h6
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+
+                val latestReadings = viewModel.getLatestReadings(selectedMeterType)
+                if (latestReadings != null) {
+                    val (newest, previous) = latestReadings
+                    Text("Newest Reading: ${newest.reading} (${newest.readingDate})")
+                    Text("Previous Reading: ${previous.reading} (${previous.readingDate})")
+                    
+                    val difference = viewModel.calculateReadingDifference(selectedMeterType)
+                    if (difference != null) {
+                        Text("Difference: $difference")
+                        
+                        val rate = tariffRates.getRate(selectedMeterType)
+                        val cost = difference * rate
+                        Text("Rate: $rate per unit")
+                        Text("Estimated Cost: $cost")
+                    }
+                } else {
+                    Text("Not enough readings to calculate difference")
+                }
+            }
         }
     }
 }
