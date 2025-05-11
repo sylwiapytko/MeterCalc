@@ -52,10 +52,10 @@ class MeterViewModel : ViewModel() {
             .filter { it.meterType == meterType }
             .sortedByDescending { it.readingDate }
 
-        if (relevantReadings.size < 2) {
+        if (relevantReadings.isEmpty()) {
             return null
         }
+        return Pair(relevantReadings[0], relevantReadings.getOrElse(1, {relevantReadings[0]}))
 
-        return Pair(relevantReadings[0], relevantReadings[1])
     }
 }
