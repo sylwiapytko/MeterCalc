@@ -34,7 +34,8 @@ fun TotalCostsScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("Total Costs by Date", style = MaterialTheme.typography.h5)
-            Button(onClick = onNavigateBack) {
+            Button(onClick = onNavigateBack,
+                modifier = Modifier.padding(top = 25.dp)) {
                 Text("Back")
             }
         }

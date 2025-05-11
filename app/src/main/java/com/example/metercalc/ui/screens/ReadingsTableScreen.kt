@@ -33,7 +33,8 @@ fun ReadingsTableScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("All Readings", style = MaterialTheme.typography.h5)
-            Button(onClick = onNavigateBack) {
+            Button(onClick = onNavigateBack,
+                modifier = Modifier.padding(top = 25.dp)) {
                 Text("Back")
             }
         }

@@ -47,16 +47,18 @@ fun MeterInputScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("Enter Meter Reading", style = MaterialTheme.typography.h5)
-            Row {
-                Button(
-                    onClick = onNavigateToTotalCosts,
-                    modifier = Modifier.padding(end = 8.dp)
-                ) {
-                    Text("Total Costs")
-                }
-                Button(onClick = onNavigateToReadingsTable) {
-                    Text("All Readings")
-                }
+
+        }
+        Row {
+            Button(
+                onClick = onNavigateToTotalCosts,
+                modifier = Modifier.padding(top = 25.dp, end = 25.dp)
+            ) {
+                Text("Total Costs")
+            }
+            Button(onClick = onNavigateToReadingsTable,
+                modifier = Modifier.padding(top = 25.dp )                        ) {
+                Text("All Readings")
             }
         }
 
