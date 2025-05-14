@@ -19,7 +19,6 @@ fun ReadingsTableScreen(
     viewModel: MeterViewModel = viewModel(),
     onNavigateBack: () -> Unit
 ) {
-    val tariffRates = remember { TariffRates() }
     val allReadings = viewModel.getAllReadings()
 
     Column(
@@ -71,10 +70,9 @@ fun ReadingsTableScreen(
                             // Display readings in a table format
                             sortedReadings.forEachIndexed { index, reading ->
                                 if (index < sortedReadings.size - 1) {
-                                    val nextReading = sortedReadings[index + 1]
-                                    val difference = reading.reading - nextReading.reading
-                                    val rate = tariffRates.getRate(meterType)
-                                    val cost = difference * rate
+//                                    val nextReading = sortedReadings[index + 1]
+                                    val difference = reading.consumption
+                                    val cost = reading.cost
 
                                     Row(
                                         modifier = Modifier

@@ -2,7 +2,7 @@ package com.example.metercalc.data.models
 
 import java.math.BigDecimal
 
-class TariffRates {
+object TariffRates {
 
     // Default tariff rates using BigDecimal for precision
     private val rates = mutableMapOf(

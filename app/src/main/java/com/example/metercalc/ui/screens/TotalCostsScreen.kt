@@ -20,7 +20,6 @@ fun TotalCostsScreen(
     viewModel: MeterViewModel = viewModel(),
     onNavigateBack: () -> Unit
 ) {
-    val tariffRates = remember { TariffRates() }
     val allReadings = viewModel.getAllReadings()
 
     Column(
@@ -43,20 +42,14 @@ fun TotalCostsScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         // Group readings by date and calculate costs
+
         val readingsByDate = allReadings
             .groupBy { it.readingDate }
-            .mapValues { (_, readings) ->
-                readings.groupBy { it.meterType }
-                    .mapValues { (meterType, meterReadings) ->
-                        val sortedReadings = meterReadings.sortedByDescending { it.readingDate }
-                        if (sortedReadings.size >= 2) {
-                            val difference = sortedReadings[0].reading - sortedReadings[1].reading
-                            val rate = tariffRates.getRate(meterType)
-                            difference * rate
-                        } else BigDecimal.ZERO
-                    }
+            .map { (date, readings) ->
+                val costsByMeter = readings
+                    .associate { it.meterType to it.cost }
+                date to costsByMeter
             }
-            .toList()
             .sortedByDescending { it.first }
 
         LazyColumn {
@@ -81,7 +74,7 @@ fun TotalCostsScreen(
 
                         // Display costs for each meter type
                         costsByMeter.forEach { (meterType, cost) ->
-                            if (cost != BigDecimal.ZERO) {
+//                            if (cost != BigDecimal.ZERO) {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -91,7 +84,7 @@ fun TotalCostsScreen(
                                     Text(meterType.name.replace("_", " "))
                                     Text("Cost: $cost")
                                 }
-                            }
+//                            }
                         }
 
                         // Calculate and display total cost for the date

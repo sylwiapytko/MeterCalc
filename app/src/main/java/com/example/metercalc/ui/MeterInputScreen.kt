@@ -29,9 +29,6 @@ fun MeterInputScreen(
     var readingValue by remember { mutableStateOf("") }
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    
-    // Create TariffRates instance
-    val tariffRates = remember { TariffRates() }
 
     val context = LocalContext.current
 
@@ -177,7 +174,7 @@ fun MeterInputScreen(
                     return@Button
                 }
 
-                viewModel.addReading(selectedMeterType, value, selectedDate)
+                viewModel.addReading(selectedMeterType, selectedDate, value)
                 Toast.makeText(context, "Reading saved!", Toast.LENGTH_SHORT).show()
                 readingValue = "" // Reset input field
                 errorMessage = null
@@ -213,16 +210,10 @@ fun MeterInputScreen(
                     val (newest, previous) = latestReadings
                     Text("Newest Reading: ${newest.reading} (${newest.readingDate})")
                     Text("Previous Reading: ${previous.reading} (${previous.readingDate})")
-                    
-                    val difference = viewModel.calculateReadingDifference(selectedMeterType)
-                    if (difference != null) {
-                        Text("Difference: $difference")
-                        
-                        val rate = tariffRates.getRate(selectedMeterType)
-                        val cost = difference * rate
-                        Text("Rate: $rate per unit")
-                        Text("Estimated Cost: $cost")
-                    }
+
+                        Text("Difference: ${newest.consumption}")
+                        Text("Estimated Cost: ${newest.cost}")
+
                 } else {
                     Text("Not enough readings to calculate difference")
                 }
