@@ -134,35 +134,81 @@ fun MeterInputScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Save Button
-        Button(
-            onClick = {
-                val value = readingValue.toBigDecimalOrNull()
-                if (value == null) {
-                    errorMessage = "Enter a valid number"
-                    return@Button
-                }
-
-                // Validate reading value
-                if (latestReading != null && value <= latestReading.reading) {
-                    errorMessage = "New reading must be greater than the previous reading"
-                    return@Button
-                }
-
-                // Validate date
-                if (latestReading != null && selectedDate.isBefore(latestReading.readingDate)) {
-                    errorMessage = "Date must be later than the previous reading date"
-                    return@Button
-                }
-
-                viewModel.addReading(selectedMeterType, selectedDate, value)
-                Toast.makeText(context, "Reading saved!", Toast.LENGTH_SHORT).show()
-                readingValue = "" // Reset input field
-                errorMessage = null
-            },
-            enabled = errorMessage == null
+        // Save and Delete Buttons Row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            Text("Save Reading")
+            Button(
+                onClick = {
+                    val value = readingValue.toBigDecimalOrNull()
+                    if (value == null) {
+                        errorMessage = "Enter a valid number"
+                        return@Button
+                    }
+
+                    // Validate reading value
+                    if (latestReading != null && value <= latestReading.reading) {
+                        errorMessage = "New reading must be greater than the previous reading"
+                        return@Button
+                    }
+
+                    // Validate date
+                    if (latestReading != null && selectedDate.isBefore(latestReading.readingDate)) {
+                        errorMessage = "Date must be later than the previous reading date"
+                        return@Button
+                    }
+
+                    viewModel.addReading(selectedMeterType, selectedDate, value)
+                    Toast.makeText(context, "Reading saved!", Toast.LENGTH_SHORT).show()
+                    readingValue = "" // Reset input field
+                    errorMessage = null
+                },
+                enabled = errorMessage == null
+            ) {
+                Text("Save Reading")
+            }
+
+            // Delete Button
+            if (latestReading != null) {
+                var showDeleteConfirmation by remember { mutableStateOf(false) }
+                
+                Button(
+                    onClick = { showDeleteConfirmation = true },
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = MaterialTheme.colors.error
+                    )
+                ) {
+                    Text("Delete Last Reading")
+                }
+
+                if (showDeleteConfirmation) {
+                    AlertDialog(
+                        onDismissRequest = { showDeleteConfirmation = false },
+                        title = { Text("Confirm Deletion") },
+                        text = { 
+                            Text("Are you sure you want to delete the reading from ${latestReading.readingDate}?") 
+                        },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    if (viewModel.deleteLatestReading(selectedMeterType)) {
+                                        Toast.makeText(context, "Reading deleted!", Toast.LENGTH_SHORT).show()
+                                    }
+                                    showDeleteConfirmation = false
+                                }
+                            ) {
+                                Text("Delete", color = MaterialTheme.colors.error)
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showDeleteConfirmation = false }) {
+                                Text("Cancel")
+                            }
+                        }
+                    )
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(32.dp))

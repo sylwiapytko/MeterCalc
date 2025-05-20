@@ -92,4 +92,14 @@ class MeterViewModel : ViewModel() {
         // If two or more, pair the latest two.
         return Pair(relevantReadings[0], relevantReadings.getOrElse(1) { relevantReadings[0] })
     }
+
+    /**
+     * Deletes the most recent reading for a given meter type.
+     * @param meterType The type of meter to delete the latest reading for
+     * @return true if a reading was deleted, false if there were no readings to delete
+     */
+    fun deleteLatestReading(meterType: MeterType): Boolean {
+        val latestReading = getLatestReading(meterType) ?: return false
+        return readings.remove(latestReading)
+    }
 }
