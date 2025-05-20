@@ -18,6 +18,8 @@ import com.example.metercalc.viewmodel.MeterViewModel
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 
 @Composable
 fun MeterInputScreen(
@@ -80,32 +82,6 @@ fun MeterInputScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Previous Reading Card
-        val latestReadings = viewModel.getLatestReadings(selectedMeterType)
-        if (latestReadings != null) {
-            val (newest, _) = latestReadings
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                elevation = 2.dp
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .fillMaxWidth(),
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    Text(
-                        "Previous Reading",
-                        style = MaterialTheme.typography.subtitle1
-                    )
-                    Text("Value: ${newest.reading}")
-                    Text("Date: ${newest.readingDate}")
-                }
-            }
-        }
-
         // Input Field for Meter Reading
         OutlinedTextField(
             value = readingValue,
@@ -129,13 +105,18 @@ fun MeterInputScreen(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+        //Get all readings for the selected meter type
+        val allReadingsForType = viewModel.getAllReadings().filter { it.meterType == selectedMeterType }
+            .sortedByDescending { it.readingDate }
+        //Get the latest reading for the selected meter type
+        val latestReading = allReadingsForType.firstOrNull()
 
         // Date Picker Button
         val datePicker = DatePickerDialog(
             context,
             { _, year, month, dayOfMonth ->
                 val newDate = LocalDate.of(year, month + 1, dayOfMonth)
-                if (latestReadings != null && newDate.isBefore(latestReadings.first.readingDate)) {
+                if (latestReading != null && newDate.isBefore(latestReading.readingDate)) {
                     errorMessage = "Date must be later than the previous reading date"
                 } else {
                     selectedDate = newDate
@@ -163,13 +144,13 @@ fun MeterInputScreen(
                 }
 
                 // Validate reading value
-                if (latestReadings != null && value <= latestReadings.first.reading) {
+                if (latestReading != null && value <= latestReading.reading) {
                     errorMessage = "New reading must be greater than the previous reading"
                     return@Button
                 }
 
                 // Validate date
-                if (latestReadings != null && selectedDate.isBefore(latestReadings.first.readingDate)) {
+                if (latestReading != null && selectedDate.isBefore(latestReading.readingDate)) {
                     errorMessage = "Date must be later than the previous reading date"
                     return@Button
                 }
@@ -186,36 +167,51 @@ fun MeterInputScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Display Reading Difference and Cost
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            elevation = 4.dp
-        ) {
-            Column(
+        // Previous Readings Section
+
+        if (allReadingsForType.isNotEmpty()) {
+            Card(
                 modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.Start
+                    .fillMaxWidth()
+                    .weight(1f), // Take remaining space
+                elevation = 2.dp
             ) {
-                Text(
-                    "Latest Readings for ${selectedMeterType.name.replace("_", " ")}",
-                    style = MaterialTheme.typography.h6
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                ) {
+                    Text(
+                        "Previous Readings",
+                        style = MaterialTheme.typography.subtitle1,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
 
-                if (latestReadings != null) {
-                    val (newest, previous) = latestReadings
-                    Text("Newest Reading: ${newest.reading} (${newest.readingDate})")
-                    Text("Previous Reading: ${previous.reading} (${previous.readingDate})")
-
-                        Text("Difference: ${newest.consumption}")
-                        Text("Estimated Cost: ${newest.cost}")
-
-                } else {
-                    Text("Not enough readings to calculate difference")
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(allReadingsForType) { reading ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column {
+                                    Text("Date: ${reading.readingDate}")
+                                    Text("Reading: ${reading.reading}")
+                                }
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text("Difference: ${reading.consumption}")
+                                    Text("Cost: ${reading.cost}")
+                                }
+                            }
+                            
+                            if (reading != allReadingsForType.last()) {
+                                Divider(modifier = Modifier.padding(vertical = 4.dp))
+                            }
+                        }
+                    }
                 }
             }
         }
