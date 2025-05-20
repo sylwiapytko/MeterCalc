@@ -61,9 +61,21 @@ fun MeterInputScreen(
             }
         }
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        //Get all readings for the selected meter type
+        val allReadingsForType = viewModel.getAllReadings().filter { it.meterType == selectedMeterType }
+            .sortedByDescending { it.readingDate }
+        //Get the latest reading for the selected meter type
+        val latestReading = allReadingsForType.firstOrNull()
+
         // Dropdown for Meter Type Selection
         var expanded by remember { mutableStateOf(false) }
-        Box {
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
             Button(onClick = { expanded = true }) {
                 Text(selectedMeterType.name.replace("_", " "))  // Display formatted name
             }
@@ -78,6 +90,27 @@ fun MeterInputScreen(
                     }
                 }
             }
+            // Date Picker Button
+            val datePicker = DatePickerDialog(
+                context,
+                { _, year, month, dayOfMonth ->
+                    val newDate = LocalDate.of(year, month + 1, dayOfMonth)
+                    if (latestReading != null && newDate.isBefore(latestReading.readingDate)) {
+                        errorMessage = "Date must be later than the previous reading date"
+                    } else {
+                        selectedDate = newDate
+                        errorMessage = null
+                    }
+                },
+                selectedDate.year,
+                selectedDate.monthValue - 1,
+                selectedDate.dayOfMonth
+            )
+
+            Button(onClick = { datePicker.show() }) {
+                Text("Select Date: $selectedDate")
+            }
+
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -105,34 +138,7 @@ fun MeterInputScreen(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-        //Get all readings for the selected meter type
-        val allReadingsForType = viewModel.getAllReadings().filter { it.meterType == selectedMeterType }
-            .sortedByDescending { it.readingDate }
-        //Get the latest reading for the selected meter type
-        val latestReading = allReadingsForType.firstOrNull()
 
-        // Date Picker Button
-        val datePicker = DatePickerDialog(
-            context,
-            { _, year, month, dayOfMonth ->
-                val newDate = LocalDate.of(year, month + 1, dayOfMonth)
-                if (latestReading != null && newDate.isBefore(latestReading.readingDate)) {
-                    errorMessage = "Date must be later than the previous reading date"
-                } else {
-                    selectedDate = newDate
-                    errorMessage = null
-                }
-            },
-            selectedDate.year,
-            selectedDate.monthValue - 1,
-            selectedDate.dayOfMonth
-        )
-
-        Button(onClick = { datePicker.show() }) {
-            Text("Select Date: $selectedDate")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
 
         // Save and Delete Buttons Row
         Row(
